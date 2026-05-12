@@ -252,11 +252,37 @@ class Score:
         screen.blit(self.image, self.rect)
 
 
+class Life:
+    """
+    残機数を表示　追加１
+    """
+    def __init__(self, num: int):
+        """
+        初期残機数を設定し、ハート画像を生成する 
+        """
+        self.life_num = num
+        # 40x40の空Surfaceに赤いハートを描画 
+        self.image = pg.Surface((40,40))
+        self.image.set_colorkey((0,0,0))
+        points = [(16*math.sin(t/100)**3 + 20,-(13*math.cos(t/100)-5*math.cos(2*t/100)-2*math.cos(3*t/100)-math.cos(4*t/100))+20
+                   ) for t in range(0,628)]
+        pg.draw.polygon(self.image,(255,0,0),points) # 赤色のハート 
+
+    def update(self, screen: pg.Surface):
+        """
+        現在の残機数分だけハートを画面右下に描画する 
+        """
+        for i in range(self.life_num):
+            # 右下（最右ハートが右から50, 下から50の位置）に配置 
+            screen.blit(self.image,[WIDTH-50-40*i,HEIGHT-50])
+
+
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load(f"fig/pg_bg.jpg")
     score = Score()
+    life = Life(3)
 
     bird = Bird(3, (900, 400))
     bombs = pg.sprite.Group()
@@ -299,6 +325,7 @@ def main():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.value += 1  # 1点アップ
 
+
         # 追加機能4：無敵状態の衝突判定
         if bird.state == "hyper":
             for bomb in pg.sprite.spritecollide(bird, bombs, True):
@@ -307,11 +334,13 @@ def main():
         else:
 
             for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
+                life.life_num -= 1 # Lifeを-1
                 bird.change_img(8, screen)  # こうかとん悲しみエフェクト
-                score.update(screen)
-                pg.display.update()
-                time.sleep(2)
-                return
+                if life.life_num <0:
+                    score.update(screen)
+                    pg.display.update()
+                    time.sleep(2)
+                    return
 
         bird.update(key_lst, screen)
         beams.update()
@@ -323,6 +352,7 @@ def main():
         exps.update()
         exps.draw(screen)
         score.update(screen)
+        life.update(screen)
         pg.display.update()
         tmr += 1
         clock.tick(50)
